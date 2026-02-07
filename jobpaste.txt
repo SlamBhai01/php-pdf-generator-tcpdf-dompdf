@@ -1,0 +1,95 @@
+<?php
+
+namespace  App\Modules\Production\V1\JobCard\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Production\V1\JobCard\Models\JobCardPaste;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPaste\JobCardPasteGetRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPaste\JobCardPasteStoreRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPaste\JobCardPasteUpdateRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+
+class JobCardPasteController extends Controller
+{   public function store(JobCardPasteStoreRequest $jobCardPasteStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            JobCardPaste::create([
+                "job_card_id" => $jobCardPasteStoreRequest->jobCardId,
+                "is_any_old_thing_exists" => $jobCardPasteStoreRequest->isAnyInventoryLeft,
+                "incharge_id" => $jobCardPasteStoreRequest->inchargeId,
+                "pasting_date" => $jobCardPasteStoreRequest->pastingDate,
+                "machine_id" => $jobCardPasteStoreRequest->machineId,
+                "machine_man_id" => $jobCardPasteStoreRequest->machineManId,
+                "helper_id" => $jobCardPasteStoreRequest->helpersId,
+                "pasting_workers" => $jobCardPasteStoreRequest->pastingWorkersId,
+                "production" => $jobCardPasteStoreRequest->noOfProduction,
+                "wastage_count" => $jobCardPasteStoreRequest->noOfGlueUsed,
+                "glow_usage" => $jobCardPasteStoreRequest->noOfGlueWasted,
+            ]);
+
+            DB::commit();
+            return Controller::successResponse('Pasting Added!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+        public function get(JobCardPasteGetRequest $jobCardPasteGetRequest): JsonResponse
+    {
+        try {
+            $pasting = JobCardPaste::where('job_card_id', $jobCardPasteGetRequest->jobCardId)->paginate(10);
+            return Controller::successResponse('Fetched!', true, 200,$pasting);
+        } catch (\Throwable $exception) {
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+        public function update(JobCardPasteUpdateRequest $jobCardPasteUpdateRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+         $pasting = JobCardPaste::where('id',$jobCardPasteUpdateRequest->recordId)->first();
+         if(!$pasting){
+             return Controller::errorResponse('Record not found!', false, 400);
+         }
+            $pasting->update([
+                "job_card_id" => $jobCardPasteUpdateRequest->jobCardId,
+                "is_any_old_thing_exists" => $jobCardPasteUpdateRequest->isAnyInventoryLeft,
+                "incharge_id" => $jobCardPasteUpdateRequest->inchargeId,
+                "pasting_date" => $jobCardPasteUpdateRequest->pastingDate,
+                "machine_id" => $jobCardPasteUpdateRequest->machineId,
+                "machine_man_id" => $jobCardPasteUpdateRequest->machineManId,
+                "helper_id" => $jobCardPasteUpdateRequest->helpersId,
+                "pasting_workers" => $jobCardPasteUpdateRequest->pastingWorkersId,
+                "production" => $jobCardPasteUpdateRequest->noOfProduction,
+                "wastage_count" => $jobCardPasteUpdateRequest->noOfGlueUsed,
+                "glow_usage" => $jobCardPasteUpdateRequest->noOfGlueWasted,
+            ]);
+            DB::commit();
+            return Controller::successResponse('Updated!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+     public function delete($recordId): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $pasting = JobCardPaste::where('id',$recordId)->first();
+            if(!$pasting){
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $pasting->delete();
+            DB::commit();
+            return Controller::successResponse('Deleted!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+}

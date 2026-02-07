@@ -1,0 +1,106 @@
+<?php
+
+namespace  App\Modules\Production\V1\JobCard\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Production\V1\JobCard\Models\JobCardCorrugation;
+use App\Modules\Production\V1\JobCard\Requests\jobCardCorrugation\JobCardCorrugationGetRequest;
+use App\Modules\Production\V1\JobCard\Requests\jobCardCorrugation\JobCardCorrugationStoreRequest;
+use App\Modules\Production\V1\JobCard\Requests\jobCardCorrugation\JobCardCorrugationUpdateRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardFinishing\JobCardFinishingUpdateRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+
+class JobCardCorrugationController extends Controller
+{public function store(JobCardCorrugationStoreRequest $jobCardCorrugationStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            JobCardCorrugation::create([
+                'job_card_id' => $jobCardCorrugationStoreRequest->jobCardId,
+                'corrugation_date' => $jobCardCorrugationStoreRequest->date,
+                'incharge_id' => $jobCardCorrugationStoreRequest->incharge,
+                'machine_man_id' => $jobCardCorrugationStoreRequest->machineMan,
+                'helper_id' => $jobCardCorrugationStoreRequest->helper,
+                'is_any_old_thing_exists' => $jobCardCorrugationStoreRequest->isAnyInventoryLeft,
+                'role_size' => $jobCardCorrugationStoreRequest->rollSize,
+                'cutting_role_count' => $jobCardCorrugationStoreRequest->cuttingRollCount,
+                'cutting_size' => $jobCardCorrugationStoreRequest->cuttingSize,
+                'production' => $jobCardCorrugationStoreRequest->production,
+                'cora_gum' => $jobCardCorrugationStoreRequest->corrugumUsage,
+                'wastage_count' => $jobCardCorrugationStoreRequest->waste,
+                'chemical' => $jobCardCorrugationStoreRequest->chemical,
+            ]);
+
+            DB::commit();
+            return Controller::successResponse('Corrugation Added!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+
+    public function get(JobCardCorrugationGetRequest $jobCardCorrugationGetRequest): JsonResponse
+    {
+        try {
+            $corrugations = JobCardCorrugation::where('job_card_id', $jobCardCorrugationGetRequest->jobCardId)->with([
+                'machineMan.personal',
+                'helperMan.personal',
+                'inCharge.personal',
+            ])->paginate(10);
+
+            return Controller::successResponse('Fetched!', true, 200,$corrugations);
+        } catch (\Throwable $exception) {
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+
+    public function update(JobCardCorrugationUpdateRequest $jobCardFinishingUpdateRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $corrugation = JobCardCorrugation::where('id',$jobCardFinishingUpdateRequest->recordId)->first();
+            if (!$corrugation) {
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $corrugation->update([
+                'job_card_id' => $jobCardFinishingUpdateRequest->jobCardId,
+                'corrugation_date' => $jobCardFinishingUpdateRequest->date,
+                'incharge_id' => $jobCardFinishingUpdateRequest->incharge,
+                'machine_man_id' => $jobCardFinishingUpdateRequest->machineMan,
+                'helper_id' => $jobCardFinishingUpdateRequest->helper,
+                'is_any_old_thing_exists' => $jobCardFinishingUpdateRequest->isAnyInventoryLeft,
+                'role_size' => $jobCardFinishingUpdateRequest->rollSize,
+                'cutting_role_count' => $jobCardFinishingUpdateRequest->cuttingRollCount,
+                'cutting_size' => $jobCardFinishingUpdateRequest->cuttingSize,
+                'production' => $jobCardFinishingUpdateRequest->production,
+                'cora_gum' => $jobCardFinishingUpdateRequest->corrugumUsage,
+                'wastage_count' => $jobCardFinishingUpdateRequest->waste,
+                'chemical' => $jobCardFinishingUpdateRequest->chemical,
+            ]);
+            DB::commit();
+            return Controller::successResponse('Updated!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+    public function delete($recordId): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $corrugation = JobCardCorrugation::where('id',$recordId)->first();
+            if (!$corrugation) {
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $corrugation->delete();
+            DB::commit();
+            return Controller::successResponse('Deleted!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+}

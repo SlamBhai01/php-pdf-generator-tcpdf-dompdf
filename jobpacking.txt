@@ -1,0 +1,92 @@
+<?php
+
+namespace  App\Modules\Production\V1\JobCard\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Production\V1\JobCard\Models\JobCardPacking;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPacking\JobCardPackingGetRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPacking\JobCardPackingStoreRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPacking\JobCardPackingUpdateRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+
+class JobCardPackingController extends Controller
+{ public function store(JobCardPackingStoreRequest $jobCardPackingStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            JobCardPacking::create([
+                'job_card_id' => $jobCardPackingStoreRequest->jobCardId,
+                'is_old_thing_exists' => $jobCardPackingStoreRequest->isAnyInventoryLeft,
+                'packing_date' => $jobCardPackingStoreRequest->sortingDate,
+                'incharge_id' => $jobCardPackingStoreRequest->inchargeId,
+                'helper_id' => $jobCardPackingStoreRequest->helpersId,
+                'remarks' => $jobCardPackingStoreRequest->remarks,
+                'waste_count' => $jobCardPackingStoreRequest->wastage,
+                'waste_reason' => $jobCardPackingStoreRequest->wastageReason,
+            ]);
+            DB::commit();
+            return Controller::successResponse('Added!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+
+    public function get(JobCardPackingGetRequest $jobCardPackingGetRequest): JsonResponse
+    {
+        try {
+            $packings = JobCardPacking::where('job_card_id', $jobCardPackingGetRequest->jobCardId)->paginate(10);
+            return Controller::successResponse('Success block!', true, 200,$packings);
+        } catch (\Throwable $exception) {
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+
+    public function update(JobCardPackingUpdateRequest $jobCardPackingUpdateRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $packing = JobCardPacking::where('id',$jobCardPackingUpdateRequest->recordId)->first();
+            if(!$packing){
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $packing->update([
+                'job_card_id' => $jobCardPackingUpdateRequest->jobCardId,
+                'is_old_thing_exists' => $jobCardPackingUpdateRequest->isAnyInventoryLeft,
+                'packing_date' => $jobCardPackingUpdateRequest->sortingDate,
+                'incharge_id' => $jobCardPackingUpdateRequest->inchargeId,
+                'helper_id' => $jobCardPackingUpdateRequest->helpersId,
+                'remarks' => $jobCardPackingUpdateRequest->remarks,
+                'waste_count' => $jobCardPackingUpdateRequest->wastage,
+                'waste_reason' => $jobCardPackingUpdateRequest->wastageReason,
+            ]);
+
+            DB::commit();
+            return Controller::successResponse('Updated!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+     public function delete($recordId): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+
+            $packing = JobCardPacking::where('id',$recordId)->first();
+            if(!$packing){
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $packing->delete();
+            DB::commit();
+            return Controller::successResponse('Deleted!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+}

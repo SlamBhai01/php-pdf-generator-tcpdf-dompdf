@@ -1,0 +1,120 @@
+<?php
+
+namespace  App\Modules\Production\V1\JobCard\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Production\V1\JobCard\Models\JobCardPrinting;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPrinting\JobCardPrintingDeleteRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPrinting\JobCardPrintingGetRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPrinting\JobCardPrintingStoreRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardPrinting\JobCardPrintingUpdateRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+
+class JobCardPrintingController extends Controller
+{ public function store(JobCardPrintingStoreRequest $jobCardPrintingStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $jobCardId = $jobCardPrintingStoreRequest->jobCardId;
+            $wastageSheetCount = $jobCardPrintingStoreRequest->wastageSheetCount ?? 0;
+            $wastageReason = $jobCardPrintingStoreRequest->wastageReason ?? null;
+            $isAnyLeft = $jobCardPrintingStoreRequest->isAnyInventoryLeft;
+            foreach ($jobCardPrintingStoreRequest->printRuns as $printRun) {
+                JobCardPrinting::create([
+                    'job_card_id' => $jobCardId,
+                    'printing_date' => $printRun['date'],
+                    'machine_id' => $printRun['machine'],
+                    'machine_man_id' => $printRun['machineMan'],
+                    'feeder_man_id' => $printRun['feederMan'],
+                    'description' => $printRun['production'],
+                    'new_plates' => $printRun['newPlates'],
+                    'old_plates' => $printRun['oldPlates'],
+                    'bad_plates' => $printRun['bad'],
+                    'colour_id' => $printRun['colour'],
+                    'qty' => $printRun['quantity'],
+                    'incharge_id' => $printRun['incharge'],
+                    'is_any_inventory_left' => $isAnyLeft,
+                    'wastage_sheet_count' => $wastageSheetCount,
+                    'wastage_reason' => $wastageReason,
+                ]);
+            }
+            DB::commit();
+            return Controller::successResponse('Printing added!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+     public function get(JobCardPrintingGetRequest $cardPrintingGetRequest): JsonResponse
+    {
+        try {
+            if (Controller::validateNumericBoolean($cardPrintingGetRequest->isList)){
+                $jobCardPrinting = JobCardPrinting::where('job_card_id',$cardPrintingGetRequest->jobCardId)->get();
+            }else{
+                $jobCardPrinting = JobCardPrinting::with([
+                    'machine',
+                    'machineMan.personal',
+                    'machineFeeder.personal',
+                    'inCharge.personal',
+                    'colour'
+                ])->where('job_card_id',$cardPrintingGetRequest->jobCardId)->paginate(10);
+            }
+            return Controller::successResponse('Printing Fetched!', true, 200,$jobCardPrinting);
+        } catch (\Throwable $exception) {
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+      public function update(JobCardPrintingUpdateRequest $jobCardPrintingUpdateRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $jobCardId = $jobCardPrintingUpdateRequest->jobCardId;
+            $wastageSheetCount = $jobCardPrintingStoreRequest->wastageSheetCount ?? 0;
+            $wastageReason = $jobCardPrintingUpdateRequest->wastageReason ?? null;
+            $isAnyLeft = $jobCardPrintingUpdateRequest->isAnyInventoryLeft;
+            JobCardPrinting::where('job_card_id',$jobCardId)->delete();
+            foreach ($jobCardPrintingUpdateRequest->printRuns as $printRun) {
+                JobCardPrinting::create([
+                    'job_card_id' => $jobCardId,
+                    'printing_date' => $printRun['date'],
+                    'machine_id' => $printRun['machine'],
+                    'machine_man_id' => $printRun['machineMan'],
+                    'feeder_man_id' => $printRun['feederMan'],
+                    'description' => $printRun['production'],
+                    'new_plates' => $printRun['newPlates'],
+                    'old_plates' => $printRun['oldPlates'],
+                    'bad_plates' => $printRun['bad'],
+                    'colour_id' => $printRun['colour'],
+                    'qty' => $printRun['quantity'],
+                    'incharge_id' => $printRun['incharge'],
+                    'is_any_inventory_left' => $isAnyLeft,
+                    'wastage_sheet_count' => $wastageSheetCount,
+                    'wastage_reason' => $wastageReason,
+                ]);
+            }
+            DB::commit();
+            return Controller::successResponse('Updated!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+        public function delete($printingId): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $printing = JobCardPrinting::where('id',$printingId)->first();
+            if (!$printing){
+                return Controller::successResponse('Printing not found!', true, 200);
+            }
+            $printing->delete();
+            DB::commit();
+            return Controller::successResponse('Deleted!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+}

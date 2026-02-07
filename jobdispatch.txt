@@ -1,0 +1,95 @@
+<?php
+
+namespace  App\Modules\Production\V1\JobCard\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Production\V1\JobCard\Models\JobCardDispatch;
+use App\Modules\Production\V1\JobCard\Requests\JobCard\JobCardStoreRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardDispatch\JobCardDispatchGetRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardDispatch\JobCardDispatchStoreRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+class JobCardDispatchController extends Controller
+{
+     public function store(JobCardDispatchStoreRequest $jobCardDispatchStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $jobCardId = $jobCardDispatchStoreRequest->job_card_id;
+            foreach ($jobCardDispatchStoreRequest->details as $jobCardDispatch) {
+                JobCardDispatch::create([
+                    'job_card_id' => $jobCardId,
+                    'dispatch_date' => $jobCardDispatch['date'],
+                    'order_id' => $jobCardDispatch['orderId'],
+                    'dispatch_no' => $jobCardDispatch['dispatchNo'],
+                    'balance' => $jobCardDispatch['balance'],
+                    'dc_no' => $jobCardDispatch['dcNo'],
+                    'purchase_order_no' => $jobCardDispatch['purchaseOrderNo'],
+                    'dispatcher' => $jobCardDispatch['dispatcher'],
+                    'remarks' => $jobCardDispatch['remarks'],
+                ]);
+            }
+
+            DB::commit();
+            return Controller::successResponse('Created !', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+      public function get(JobCardDispatchGetRequest $jobCardDispatchGetRequest): JsonResponse
+    {
+        try {
+            $disputes = JobCardDispatch::where('job_card_id', $jobCardDispatchGetRequest->jobCardId)->paginate(10);
+
+            return Controller::successResponse('Fetched!', true, 200,$disputes);
+        } catch (\Throwable $exception) {
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+
+    public function update(JobCardDispatchStoreRequest $jobCardDispatchStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $jobCardId = $jobCardDispatchStoreRequest->job_card_id;
+            JobCardDispatch::where('job_card_id', $jobCardId)->delete();
+            foreach ($jobCardDispatchStoreRequest->details as $jobCardDispatch) {
+                JobCardDispatch::create([
+                    'job_card_id' => $jobCardId,
+                    'dispatch_date' => $jobCardDispatch['date'],
+                    'order_id' => $jobCardDispatch['orderId'],
+                    'dispatch_no' => $jobCardDispatch['dispatchNo'],
+                    'balance' => $jobCardDispatch['balance'],
+                    'dc_no' => $jobCardDispatch['dcNo'],
+                    'purchase_order_no' => $jobCardDispatch['purchaseOrderNo'],
+                    'dispatcher' => $jobCardDispatch['dispatcher'],
+                    'remarks' => $jobCardDispatch['remarks'],
+                ]);
+            }
+
+            DB::commit();
+            return Controller::successResponse('updated!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+  public function delete($recordID): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+           $dispatch = JobCardDispatch::where('id', $recordID)->first();
+           if (!$dispatch) {
+               return Controller::errorResponse('Record not found!', true, 400);
+           }
+            $dispatch->delete();
+            DB::commit();
+            return Controller::successResponse('Deleted!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+}

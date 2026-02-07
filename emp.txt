@@ -1,0 +1,139 @@
+{
+  "labels": {
+    "lbl_urdu_date": "تاریخ",
+    "lbl_urdu_yes": "ہاں",
+    "lbl_urdu_no": "نہیں",
+    "lbl_urdu_note": "کیا متعلقہ جاب سے پہلے والی جاب کی کوئی چیز موجود ہے؟",
+    "lbl_urdu_incharge_sign": "انچارج دستخط",
+    "lbl_sec_sorting": "سورٹنگ اینڈ گرلز پیکنگ ڈیپارٹمنٹ",
+    "lbl_special_qc": "خاص کوالٹی چیک",
+    "lbl_dispatch_detail": "Dispatch Detail",
+    "lbl_incharge": "انچارج",
+    "lbl_helpers": "ہیلپرز",
+    "lbl_remarks": "ریمارکس",
+    "lbl_waste": "ضائع",
+    "lbl_waste_reason": "وجہ",
+    "lbl_qc_questions": [
+      "کیا جاب کارڈ کی ہدایات کے مطابق جاب تیار ہوا ہے؟",
+      "کیا پرنٹنگ کوالٹی ٹھیک ہے؟",
+      "کیا ڈائی کٹنگ کی کوالٹی ٹھیک ہے؟",
+      "کیا جڑائی ٹھیک ہے؟",
+      "کیا کارٹن میں تعداد پوری ہے؟",
+      "کیا مال پارٹی کو Dispatch ہو سکتا ہے؟"
+    ],
+    "lbl_dispatch_table": ["Sr.", "Date", "Order", "Dispatch", "Balance", "D/C No.", "PO#", "Dispatcher"],
+    "lbl_sig_prod_mgr": "Signature Production Manager",
+    "lbl_sig_qc_mgr": "Signature QC Manager",
+    "lbl_sig_dispatch_off": "Signature Dispatch Officer",
+    "lbl_remarks_en": "Remarks:-"
+  },
+  "data": {
+    "sorting_packing": {
+      "date": "2025-12-30",
+      "prev_job": "نہیں",
+      "incharge_name": "محمد ارشد",
+      "helpers_count": "03",
+      "remarks_text": "پیکنگ مکمل ہے اور کوالٹی چیک کر لی گئی ہے۔",
+      "waste_qty": "15",
+      "waste_reason_text": "کٹنگ کے دوران خرابی"
+    },
+    "qc_checks": {
+      "q1": "ہاں", "q2": "ہاں", "q3": "ہاں", "q4": "ہاں", "q5": "ہاں", "q6": "ہاں"
+    },
+    "dispatch_rows": [
+      { "sr": "1", "date": "2025-12-30", "order": "5000", "dispatch": "2500", "balance": "2500", "dc": "DC-88", "po": "PO-12", "dispatcher": "علی" }
+    ]
+  }
+}
+<style>
+    .form-container { direction: rtl; text-align: right; font-family: freeserif; }
+    .section-title { text-align: center; font-weight: bold; font-size: 16px; border-bottom: 2px solid #000; margin: 10px 0; background-color: #f9f9f9; padding: 5px; }
+    .line-field { border-bottom: 1px solid #000; display: inline-block; min-width: 100px; text-align: center; }
+    .box-sm { border: 1px solid #000; padding: 2px 8px; margin-left: 10px; font-size: 11px; }
+    .selected-box { background-color: #d1d1d1; font-weight: bold; }
+    .dashed-line { border-top: 1px dashed #000; margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .dispatch-table td, .dispatch-table th { border: 1px solid #000; text-align: center; padding: 6px; font-size: 10px; }
+</style>
+
+<div class="form-container">
+
+    <div class="section-title">{{ $labels['lbl_sec_sorting'] }}</div>
+    <table>
+        <tr>
+            <td width="30%">{{ $labels['lbl_urdu_date'] }}: <span class="line-field">{{ $data['sorting_packing']['date'] ?? '   -   -   ' }}</span></td>
+            <td width="70%" align="right">
+                {{ $labels['lbl_urdu_note'] }} <strong>نوٹ:</strong>
+                <span class="box-sm {{ ($data['sorting_packing']['prev_job'] ?? '') == 'ہاں' ? 'selected-box' : '' }}">{{ $labels['lbl_urdu_yes'] }}</span>
+                <span class="box-sm {{ ($data['sorting_packing']['prev_job'] ?? '') == 'نہیں' ? 'selected-box' : '' }}">{{ $labels['lbl_urdu_no'] }}</span>
+                &nbsp;&nbsp; {{ $labels['lbl_urdu_incharge_sign'] }}: <span class="line-field">__________</span>
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td>انچارج: <span class="line-field" style="width:200px;">{{ $data['sorting_packing']['incharge'] ?? '' }}</span></td>
+            <td>ہیلپرز: <span class="line-field" style="width:100px;">{{ $data['sorting_packing']['helpers'] ?? '' }}</span></td>
+        </tr>
+        <tr>
+            <td colspan="2">ریمارکس: <span class="line-field" style="width:550px;">{{ $data['sorting_packing']['remarks'] ?? '' }}</span></td>
+        </tr>
+        <tr>
+            <td colspan="2">ضائع: <span class="line-field" style="width:100px;">{{ $data['sorting_packing']['waste'] ?? '' }}</span> &nbsp;&nbsp; وجہ: <span class="line-field" style="width:400px;">{{ $data['sorting_packing']['waste_reason'] ?? '' }}</span></td>
+        </tr>
+    </table>
+
+    <div class="dashed-line"></div>
+
+    <div style="text-align:center; font-weight:bold; font-size:15pt; margin-bottom:10px;">
+        <span style="border: 2px solid #000; padding: 0 20px;">{{ $labels['lbl_special_qc'] }}</span>
+    </div>
+
+    <table cellpadding="5">
+        @foreach($labels['lbl_qc_questions'] as $index => $question)
+        @php $qKey = 'q' . ($index + 1); @endphp
+        <tr>
+            <td width="80%" align="right" style="font-size:12px;">{{ $question }} ✍️</td>
+            <td width="20%" align="left">
+                <span class="box-sm {{ ($data['qc_checks'][$qKey] ?? '') == 'نہیں' ? 'selected-box' : '' }}">نہیں</span>
+                <span class="box-sm {{ ($data['qc_checks'][$qKey] ?? '') == 'ہاں' ? 'selected-box' : '' }}">ہاں</span>
+            </td>
+        </tr>
+        @endforeach
+    </table>
+
+    <table width="100%" style="margin-top:25px; text-align:center; font-size:10px;">
+        <tr>
+            <td>Signature Production Manager<br>____________________</td>
+            <td>Signature QC Manager<br>____________________</td>
+            <td>Signature Dispatch Officer<br>____________________</td>
+        </tr>
+    </table>
+
+    <div class="dashed-line"></div>
+
+    <div style="text-align:center; font-weight:bold; font-size:14pt; margin-bottom:10px;">{{ $labels['lbl_dispatch_detail'] }}</div>
+    <table class="dispatch-table">
+        <tr style="background-color:#eee;">
+            @foreach($labels['lbl_dispatch_table'] as $col)
+                <th>{{ $col }}</th>
+            @endforeach
+        </tr>
+        @for($i=0; $i<4; $i++)
+        @php $row = $data['dispatch_rows'][$i] ?? null; @endphp
+        <tr>
+            <td>{{ $row['sr'] ?? ($i + 1) }}</td>
+            <td>{{ $row['date'] ?? '' }}</td>
+            <td>{{ $row['order'] ?? '' }}</td>
+            <td>{{ $row['dispatch'] ?? '' }}</td>
+            <td>{{ $row['balance'] ?? '' }}</td>
+            <td>{{ $row['dc'] ?? '' }}</td>
+            <td>{{ $row['po'] ?? '' }}</td>
+            <td>{{ $row['dispatcher'] ?? '' }}</td>
+        </tr>
+        @endfor
+    </table>
+    <div style="margin-top:10px; font-weight:bold;">Remarks:- <span class="line-field" style="width:500px;"></span></div>
+
+</div>

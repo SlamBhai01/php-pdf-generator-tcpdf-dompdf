@@ -1,0 +1,108 @@
+<?php
+
+namespace  App\Modules\Production\V1\JobCard\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Production\V1\JobCard\Models\JobCardDie;
+use App\Modules\Production\V1\JobCard\Requests\JobCard\JobCardGetRequest;
+use App\Modules\Production\V1\JobCard\Requests\jobCardDie\JobCardDieStoreRequest;
+use App\Modules\Production\V1\JobCard\Requests\jobCardDie\JobCardDieUpdateRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+
+class JobCardDieController extends Controller
+{  public function store(JobCardDieStoreRequest $jobCardDieStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            JobCardDie::create([
+                'job_card_id' => $jobCardDieStoreRequest->jobCardId,
+                'is_old_thing_exists' => $jobCardDieStoreRequest->isAnyInventoryLeft,
+                'incharge_id' => $jobCardDieStoreRequest->incharge,
+                'dying_date' => $jobCardDieStoreRequest->date,
+                'machine_id' => $jobCardDieStoreRequest->machine,
+                'machine_man_id' => $jobCardDieStoreRequest->machineMan,
+                'helper_id' => $jobCardDieStoreRequest->helpers,
+                'creasing' => $jobCardDieStoreRequest->creasing,
+                'cutting' => $jobCardDieStoreRequest->cutting,
+                'folding' => $jobCardDieStoreRequest->folding,
+                'embossing' => $jobCardDieStoreRequest->embossing,
+                'cracking' => $jobCardDieStoreRequest->cracking,
+                'is_die_use_able' => $jobCardDieStoreRequest->isAnyDyeUseable,
+            ]);
+
+            DB::commit();
+            return Controller::successResponse('Success block!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+
+    public function get(JobCardGetRequest $jobCardGetRequest): JsonResponse
+    {
+        try {
+            $dying = JobCardDie::where('job_card_id',$jobCardGetRequest->jobCardId)->with([
+                'machine',
+                'machineMan.personal',
+                'helperMan.personal',
+                'inCharge.personal',
+            ])->paginate(10);
+
+            return Controller::successResponse('Success block!', true, 200,$dying);
+        } catch (\Throwable $exception) {
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+
+    public function update(JobCardDieUpdateRequest $jobCardDieUpdateRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $dying = JobCardDie::where('id',$jobCardDieUpdateRequest->recordId)->first();
+            if(!$dying){
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $dying->update([
+                'job_card_id' => $jobCardDieUpdateRequest->jobCardId,
+                'is_old_thing_exists' => $jobCardDieUpdateRequest->isAnyInventoryLeft,
+                'incharge_id' => $jobCardDieUpdateRequest->incharge,
+                'dying_date' => $jobCardDieUpdateRequest->date,
+                'machine_id' => $jobCardDieUpdateRequest->machine,
+                'machine_man_id' => $jobCardDieUpdateRequest->machineMan,
+                'helper_id' => $jobCardDieUpdateRequest->helpers,
+                'creasing' => $jobCardDieUpdateRequest->creasing,
+                'cutting' => $jobCardDieUpdateRequest->cutting,
+                'folding' => $jobCardDieUpdateRequest->folding,
+                'embossing' => $jobCardDieUpdateRequest->embossing,
+                'cracking' => $jobCardDieUpdateRequest->cracking,
+                'is_die_use_able' => $jobCardDieUpdateRequest->isAnyDyeUseable,
+            ]);
+            DB::commit();
+            return Controller::successResponse('Success block!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+
+    public function delete($recordId): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $dying = JobCardDie::where('id',$recordId)->first();
+            if(!$dying){
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $dying->delete();
+            DB::commit();
+            return Controller::successResponse('Deleted!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+}

@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Modules\Production\V1\JobCard\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Production\V1\JobCard\Models\JobCardFinishing;
+use App\Modules\Production\V1\JobCard\Requests\JobCardFinishing\JobCardFinishingGetRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardFinishing\JobCardFinishingUpdateRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardFinishingStoreRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+
+class JobCardFinishingController extends Controller
+{ public function store(JobCardFinishingStoreRequest $jobCardFinishingStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            JobCardFinishing::create([
+                'job_card_id' => $jobCardFinishingStoreRequest->jobCardId,
+                'in_charge_id' => $jobCardFinishingStoreRequest->inChargeId,
+                'finishing_date' => $jobCardFinishingStoreRequest->date,
+                'machine_id' => $jobCardFinishingStoreRequest->machine,
+                'machine_man_id' => $jobCardFinishingStoreRequest->machineMan,
+                'feeder_man_id' => $jobCardFinishingStoreRequest->feederMan,
+                'varnish' => $jobCardFinishingStoreRequest->varnish,
+                'folder' => $jobCardFinishingStoreRequest->folder,
+                'role_size' => $jobCardFinishingStoreRequest->laminationRollSize,
+                'shine' => $jobCardFinishingStoreRequest->shine,
+                'mat' => $jobCardFinishingStoreRequest->mat,
+                'glow' => $jobCardFinishingStoreRequest->glue,
+                'production' => $jobCardFinishingStoreRequest->production,
+                'wastage_sheet_count' => $jobCardFinishingStoreRequest->wasteSheets,
+                'is_any_old_thing_exists' => $jobCardFinishingStoreRequest->isAnyInventoryLeft,
+            ]);
+
+            DB::commit();
+            return Controller::successResponse('Added!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+  public function get(JobCardFinishingGetRequest $jobCardFinishingGetRequest): JsonResponse
+    {
+        try {
+            $finishing = JobCardFinishing::where('job_card_id', $jobCardFinishingGetRequest->jobCardId)->with([
+                'machine',
+                'machineMan.personal',
+                'machineFeeder.personal',
+                'inCharge.personal',
+            ])->paginate(10);
+
+            return Controller::successResponse('Fetched!', true, 200, $finishing);
+        } catch (\Throwable $exception) {
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+     public function update(JobCardFinishingUpdateRequest $jobCardFinishingUpdateRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $finishing = JobCardFinishing::where('id', $jobCardFinishingUpdateRequest->recordId)->first();
+            if (!$finishing) {
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $finishing->update([
+                'job_card_id' => $jobCardFinishingUpdateRequest->jobCardId,
+                'in_charge_id' => $jobCardFinishingUpdateRequest->inChargeId,
+                'finishing_date' => $jobCardFinishingUpdateRequest->date,
+                'machine_id' => $jobCardFinishingUpdateRequest->machine,
+                'machine_man_id' => $jobCardFinishingUpdateRequest->machineMan,
+                'feeder_man_id' => $jobCardFinishingUpdateRequest->feederMan,
+                'varnish' => $jobCardFinishingUpdateRequest->varnish,
+                'folder' => $jobCardFinishingUpdateRequest->folder,
+                'role_size' => $jobCardFinishingUpdateRequest->laminationRollSize,
+                'shine' => $jobCardFinishingUpdateRequest->shine,
+                'mat' => $jobCardFinishingUpdateRequest->mat,
+                'glow' => $jobCardFinishingUpdateRequest->glue,
+                'production' => $jobCardFinishingUpdateRequest->production,
+                'wastage_sheet_count' => $jobCardFinishingUpdateRequest->wasteSheets,
+                'is_any_old_thing_exists' => $jobCardFinishingUpdateRequest->isAnyInventoryLeft,
+            ]);
+
+            DB::commit();
+            return Controller::successResponse('Updated!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+ public function delete($recordId): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $finishing = JobCardFinishing::where('id', $recordId)->first();
+            if (!$finishing) {
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $finishing->delete();
+            DB::commit();
+            return Controller::successResponse('Deleted!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+}

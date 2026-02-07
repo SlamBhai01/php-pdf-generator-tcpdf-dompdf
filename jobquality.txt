@@ -1,0 +1,96 @@
+<?php
+
+namespace  App\Modules\Production\V1\JobCard\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Production\V1\JobCard\Models\JobCardQualityControl;
+use App\Modules\Production\V1\JobCard\Requests\JobCardQualityControl\JobCardQualityControlGetRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardQualityControl\JobCardQualityControlStoreRequest;
+use App\Modules\Production\V1\JobCard\Requests\JobCardQualityControl\JobCardQualityControlUpdateRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+
+class JobCardQualityControlController extends Controller
+{public function store(JobCardQualityControlStoreRequest $jobCardQualityControlStoreRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            JobCardQualityControl::create([
+                'job_card_id' => $jobCardQualityControlStoreRequest->jobCardId,
+                'is_job_correct' => $jobCardQualityControlStoreRequest->isJobCorrect,
+                'is_print_correct' => $jobCardQualityControlStoreRequest->isPrintCorrect,
+                'is_dye_cut_correct' => $jobCardQualityControlStoreRequest->isDyeCutCorrect,
+                'is_pasting_correct' => $jobCardQualityControlStoreRequest->isPastingCorrect,
+                'is_quantity_correct' => $jobCardQualityControlStoreRequest->isQuantityCorrect,
+                'is_dispatch_able' => $jobCardQualityControlStoreRequest->isDispatchable,
+                'dispatch_officer_id' => $jobCardQualityControlStoreRequest->dispatchOfficerId,
+                'quality_control_manager' => $jobCardQualityControlStoreRequest->qualityControlManager,
+                'production_manager' => $jobCardQualityControlStoreRequest->productionManager,
+                'quality_check_date' => $jobCardQualityControlStoreRequest->qualityCheckDate,
+            ]);
+
+            DB::commit();
+            return Controller::successResponse('Success block!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+public function get(JobCardQualityControlGetRequest $jobCardQualityControlGetRequest): JsonResponse
+    {
+        try {
+            $qualityControls = JobCardQualityControl::where('job_card_id', $jobCardQualityControlGetRequest->jobCardId)->paginate(10);
+
+            return Controller::successResponse('Success block!', true, 200,$qualityControls);
+        } catch (\Throwable $exception) {
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+      public function update(JobCardQualityControlUpdateRequest $jobCardQualityControlUpdateRequest): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $qualityControl = JobCardQualityControl::where('id',$jobCardQualityControlUpdateRequest->recordId)->first();
+            if (!$qualityControl) {
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $qualityControl->update([
+                'job_card_id' => $jobCardQualityControlUpdateRequest->jobCardId,
+                'is_job_correct' => $jobCardQualityControlUpdateRequest->isJobCorrect,
+                'is_print_correct' => $jobCardQualityControlUpdateRequest->isPrintCorrect,
+                'is_dye_cut_correct' => $jobCardQualityControlUpdateRequest->isDyeCutCorrect,
+                'is_pasting_correct' => $jobCardQualityControlUpdateRequest->isPastingCorrect,
+                'is_quantity_correct' => $jobCardQualityControlUpdateRequest->isQuantityCorrect,
+                'is_dispatch_able' => $jobCardQualityControlUpdateRequest->isDispatchable,
+                'dispatch_officer_id' => $jobCardQualityControlUpdateRequest->dispatchOfficerId,
+                'quality_control_manager' => $jobCardQualityControlUpdateRequest->qualityControlManager,
+                'production_manager' => $jobCardQualityControlUpdateRequest->productionManager,
+                'quality_check_date' => $jobCardQualityControlUpdateRequest->qualityCheckDate,
+            ]);
+            DB::commit();
+            return Controller::successResponse('Updated!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+       public function delete($recordId): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $qualityControl = JobCardQualityControl::where('id',$recordId)->first();
+            if (!$qualityControl) {
+                return Controller::errorResponse('Record not found!', false, 400);
+            }
+            $qualityControl->delete();
+            DB::commit();
+            return Controller::successResponse('Deleted!', true, 200);
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+            return Controller::errorResponse('Something went wrong!', false, 400, $exception);
+        }
+    }
+}
+
